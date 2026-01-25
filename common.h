@@ -25,6 +25,16 @@
 #define KOSZT_JAZDA     550
 #define KOSZT_ROBOTNICY 150
 
+#define ATAK_LEKKA 1
+#define ATAK_CIEZKA 1.5
+#define ATAK_JAZDA 3.5
+#define ATAK_ROBOTNICY 0
+
+#define OBRONA_LEKKA 1.2
+#define OBRONA_CIEZKA 3
+#define OBRONA_JAZDA 1.2
+#define OBRONA_ROBOTNICY 0
+
 #define KANAL_SERWER  1  
 #define KANAL_GRACZ_1 10
 #define KANAL_GRACZ_2 20
@@ -33,6 +43,12 @@
 #define ZLECENIE_PRODUKCJA 20
 #define ZLECENIE_ATAK      30
 #define WYNIK_WALKI        40
+#define INFORMACJA_BRAKU_SUROWCÓW   50
+#define PRODUKCJA_TRWA   60
+#define NIEPRAWIDLOWY_TYP_JEDNOSTKI 70
+#define NIEPRAWIDLOWY_ZLECENIE_ATAK 80
+#define ATAK_W_TOKU 90
+#define BLAD_ZLECENIA 100
 
 #define SEM_LOCK -1 
 #define SEM_UNLOCK 1 
@@ -51,6 +67,14 @@ struct GameMessage {
         int troop[4];
         int details;
     } data;
+};
+
+struct Attack{
+    int active;
+    int attacker;
+    int defender;
+    int troops[4];
+    int time_left;
 };
 
 struct ProductionOrder {
