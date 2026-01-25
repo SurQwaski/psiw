@@ -1,0 +1,138 @@
+PROTOCOL – opis komunikacji klient–serwer
+Projekt PSiW 2025 – gra strategiczna 2‑osobowa
+Autor: Kacper Janoszek
+
+============================================================
+1. Format komunikatów
+============================================================
+
+Komunikacja pomiędzy klientami a serwerem odbywa się za pomocą
+kolejki komunikatów System V.
+
+Każdy komunikat ma postać:
+
+struct GameMessage {
+    long mtype;      // kanał odbiorcy
+    struct {
+        int player_id;   // ID nadawcy (0 lub 1)
+        int action;      // typ komunikatu
+        int resources;   // liczba surowców
+        int troop[4];    // tablica jednostek
+        int details;     // dodatkowe dane (np. punkty)
+    } data;
+};
+
+Kanały:
+- KANAL_SERWER  = 1   (klient → serwer)
+- KANAL_GRACZ_1 = 10  (serwer → klient 0)
+- KANAL_GRACZ_2 = 20  (serwer → klient 1)
+
+============================================================
+2. Typy komunikatów (action)
+============================================================
+
+ZLECENIE_STAN (10)
+    Klient → Serwer:
+        Prośba o aktualny stan surowców.
+    Serwer → Klient:
+        Odpowiedź z aktualną liczbą surowców.
+
+ZLECENIE_PRODUKCJA (20)
+    Klient → Serwer:
+        Prośba o rozpoczęcie produkcji jednostek.
+        Wypełnione pole troop[].
+    Serwer → Klient:
+        - potwierdzenie rozpoczęcia produkcji
+        - lub PRODUKCJA_TRWA
+        - lub INFORMACJA_BRAKU_SUROWCÓW
+        - lub NIEPRAWIDLOWY_TYP_JEDNOSTKI
+        - lub aktualizacja stanu po wyprodukowaniu jednostki
+
+ZLECENIE_ATAK (30)
+    Klient → Serwer:
+        Prośba o rozpoczęcie ataku.
+    Serwer → Klient:
+        - potwierdzenie rozpoczęcia ataku
+        - lub ATAK_W_TOKU
+        - lub NIEPRAWIDLOWY_ZLECENIE_ATAK
+
+WYNIK_WALKI (40)
+    Serwer → Klient:
+        Wynik zakończonego ataku.
+        Zawiera:
+            details = liczba punktów
+            troop[] = aktualne jednostki
+
+INFORMACJA_BRAKU_SUROWCÓW (50)
+    Serwer → Klient:
+        Brak surowców na produkcję.
+
+PRODUKCJA_TRWA (60)
+    Serwer → Klient:
+        Próba rozpoczęcia produkcji, gdy poprzednia jeszcze trwa.
+
+NIEPRAWIDLOWY_TYP_JEDNOSTKI (70)
+    Serwer → Klient:
+        Klient wysłał błędny typ jednostki.
+
+NIEPRAWIDLOWY_ZLECENIE_ATAK (80)
+    Serwer → Klient:
+        Klient próbował wysłać więcej jednostek niż posiada.
+
+ATAK_W_TOKU (90)
+    Serwer → Klient:
+        Próba rozpoczęcia ataku, gdy inny już trwa.
+
+BLAD_ZLECENIA (100)
+    Serwer → Klient:
+        Nieznane polecenie.
+
+KONIEC GRY (999)
+    Serwer → Klient:
+        details = ID zwycięzcy.
+
+============================================================
+3. Struktura pamięci współdzielonej (serwer)
+============================================================
+
+struct GameState {
+    struct Player players[2];
+    struct Attack current_attack;
+};
+
+struct Player {
+    int id;
+    int resources;
+    int troops[4];
+    struct ProductionOrder current_production;
+    int points;
+};
+
+struct ProductionOrder {
+    int active;
+    int unit_type;
+    int pending_count;
+    int time_left;
+};
+
+struct Attack {
+    int active;
+    int attacker;
+    int defender;
+    int troops[4];
+    int time_left;
+};
+
+============================================================
+4. Zasady komunikacji
+============================================================
+
+- Klient wysyła polecenia WYŁĄCZNIE na kanał KANAL_SERWER.
+- Serwer odpowiada na kanał gracza (10 lub 20).
+- Serwer co sekundę wysyła aktualizację surowców.
+- Serwer wysyła komunikaty o produkcji i walce asynchronicznie.
+- Klient nie przechowuje stanu gry — tylko wyświetla dane z serwera.
+
+============================================================
+5. Koniec protokołu
+============================================================
