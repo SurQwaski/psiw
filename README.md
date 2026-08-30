@@ -1,5 +1,5 @@
 ============================================================
-        PROJEKT PSiW 2025 – GRA STRATEGICZNA 2v2
+        PROJEKT PSiW 2025 – GRA STRATEGICZNA 1v1
 ============================================================
 
 Autor: Kacper Janoszek  
